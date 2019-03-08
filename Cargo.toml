@@ -5,3 +5,4 @@ authors = ["Johan Ullen <johanullen@hotmail.com>"]
 edition = "2018"
 
 [dependencies]
+matrix = "0.22.0"

@@ -1,14 +1,17 @@
+use crate::types::{Pic, Pics, Tags};
 use std::fs::File;
-use std::io::{BufReader, BufRead};
-use crate::types::{Pic, Tags, Pics};
+use std::io::{BufRead, BufReader};
 use std::rc::Rc;
 
-pub fn read(filename: &str) -> Pics{
+pub fn read(filename: &str) -> Pics {
     let file = File::open(filename).expect(&format!("file {:?} not found", filename));
     let mut reader = BufReader::new(file);
     let mut first_line = String::new();
     let len = reader.read_line(&mut first_line);
-    let no_lines = first_line.trim().parse::<usize>().expect(&format!("{:?}", first_line));
+    let no_lines = first_line
+        .trim()
+        .parse::<usize>()
+        .expect(&format!("{:?}", first_line));
     let mut pics = Pics::with_capacity(no_lines);
     for (ix, line) in reader.lines().enumerate() {
         let line = line.unwrap();
@@ -23,8 +26,8 @@ pub fn read(filename: &str) -> Pics{
         }
         let tags = Rc::new(tags);
         let pic = match pic_type {
-            "H" => Pic::H{idx, tags},
-            "V" => Pic::V{idx, tags},
+            "H" => Pic::H { idx, tags },
+            "V" => Pic::V { idx, tags },
             x => panic!("{:?}", x),
         };
         pics.push(Rc::new(pic));
