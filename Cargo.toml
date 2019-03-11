@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 matrix = "0.22.0"
+ndarray = "0.12.1"

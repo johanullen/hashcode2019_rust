@@ -6,9 +6,9 @@ use io::read;
 use types::Score;
 
 fn main() {
-    // let pics = read("data/a_example.txt");
+    let pics = read("data/a_example.txt");
     // let pics = read("data/b_lovely_landscapes.txt");
-    let pics = read("data/c_memorable_moments.txt");
+    // let pics = read("data/c_memorable_moments.txt");
     // for pic in &pics {
     //     println!("{:?}", pic);
     // }
@@ -23,9 +23,12 @@ fn main() {
     println!("score for 0 {:?}", pics[0].all_scores(&pics));
     let mut scores: Vec<Vec<usize>> = Vec::with_capacity(pics.len());
     let pics_2 = pics.clone();
-    for pic in pics {
+    for pic in &pics {
         let pic_scores = pic.all_scores(&pics_2);
         scores.push(pic_scores);
     }
-    println!("scores: {:?}", scores)
+    println!("scores: {:?}", scores);
+    let scores_matrix = pics.scores_matrix();
+    println!("{:?}", scores_matrix);
+    println!("{:?}", scores_matrix.get((0, 0)));
 }

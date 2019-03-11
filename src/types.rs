@@ -1,9 +1,9 @@
-#[macro_use]
-use matrix::prelude::Packed;
 use std::cmp::min;
 use std::collections::HashSet;
 use std::rc::Rc;
-extern crate matrix;
+extern crate ndarray;
+// use ndarray::prelude::*;
+use ndarray::{Array1, Array2};
 
 pub type Tags = HashSet<String>;
 #[allow(dead_code)]
@@ -46,19 +46,29 @@ impl Pic {
         }
     }
 
-    pub fn all_scores(&self, pics: &Pics) -> Vec<usize> {
-        let mut scores = Vec::with_capacity(pics.len());
-        for pic in pics {
+    pub fn all_scores(&self, pics: &Pics) -> Array1<usize> {
+        // let mut scores = Vec::with_capacity(pics.len());
+        let mut scores = Array1::<usize>::zeros(pics.len());
+        for (idx, pic) in pics.enumerate() {
             let score = self.score_with(&pic);
-            scores.push(score)
+            scores[idx]
+            // scores.push(score)
         }
         scores
+    }
+
+    fn idx(self) -> usize {
+        match self {
+            Pic::H { idx, tags } => idx.0,
+            Pic::V { idx, tags } => idx.0,
+            Pic::VV { idx, tags } => idx.0,
+        }
     }
 }
 
 pub trait Score {
     fn score(&self) -> usize;
-    fn score_matrix(&self) -> Packed;
+    fn scores_matrix(&self) -> Array2<usize>;
 }
 
 impl Score for Pics {
@@ -70,8 +80,14 @@ impl Score for Pics {
         }
         sum
     }
-    fn scores_matrix(&self) -> Packed {
+    fn scores_matrix(&self) -> Array2<usize> {
         let len = self.len();
-        Packed::zero((len, len))
+        let mut scores = Array2::<usize>::zeros((len, len));
+        let pics = self.clone();
+        for (idx, row) in scores.genrows_mut().enumerate() {
+            let pic_scores = self[idx].all_scores(&pics);
+            row::from_vec(pic_scores);
+        }
+        scores
     }
 }
