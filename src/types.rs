@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 extern crate ndarray;
 use ndarray::{Array1, Array2};
+use std::thread;
 
 pub type Tags = HashSet<String>;
 pub type ScoresMatrix = Array2<u8>;
@@ -20,18 +21,10 @@ pub enum PicType {
     V { idx: (usize,) },
     VV { idx: (usize, usize) },
 }
-pub type Pics = Vec<Rc<Pic>>;
+pub type Pics = Vec<Pic>;
 
 impl Pic {
-    // pub fn tags(&self) -> &Rc<Tags> {
-    //     match self {
-    //         Pic::H { idx, tags } => &tags,
-    //         Pic::V { idx, tags } => &tags,
-    //         Pic::VV { idx, tags } => &tags,
-    //     }
-    // }
-
-    pub fn score_with(&self, other: &Rc<Pic>) -> u8 {
+    pub fn score_with(&self, other: &Pic) -> u8 {
         let a = &self.tags;
         let b = &other.tags;
         let a_not_b = a.difference(&b).count() as u8;
@@ -40,7 +33,7 @@ impl Pic {
         min(a_not_b, min(a_and_b, b_not_a))
     }
 
-    pub fn combine_with(&self, other: &Rc<Pic>) -> Rc<Pic> {
+    pub fn combine_with(&self, other: &Pic) -> Pic {
         match (&self.id, &other.id) {
             (PicType::V { idx: si }, PicType::V { idx: oi }) => {
                 let idx = (si.0, oi.0);
@@ -48,7 +41,7 @@ impl Pic {
                 let union: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
                 let tags = Rc::new(union);
                 let pic = Pic { id, tags };
-                Rc::new(pic)
+                pic
             }
             (_, _) => panic!("not V"),
         }
@@ -89,12 +82,15 @@ impl Score for Pics {
     fn scores_matrix(&self) -> ScoresMatrix {
         let len = self.len();
         let mut scores = ScoresMatrix::zeros((len, len));
-        let pics = self.clone();
         for (idx, pic) in self.iter().enumerate() {
-            let pic_scores = pic.all_scores(&pics);
+            // let handle = thread::spawn(|| {
+            let pic_scores = pic.all_scores(&self.clone());
             for (jdx, &score) in pic_scores.iter().enumerate() {
                 scores[(idx, jdx)] = score;
             }
+            // });
+
+
         }
         scores
     }

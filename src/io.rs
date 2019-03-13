@@ -31,7 +31,7 @@ pub fn read(filename: &str) -> Pics {
             x => panic!("{:?}", x),
         };
         let pic = Pic { tags, id };
-        pics.push(Rc::new(pic));
+        pics.push(pic);
     }
     pics
 }
