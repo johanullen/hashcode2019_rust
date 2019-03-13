@@ -1,11 +1,14 @@
+#[macro_use]
 use std::cmp::min;
 use std::collections::HashSet;
 use std::rc::Rc;
 extern crate ndarray;
-// use ndarray::prelude::*;
+use ndarray::prelude::*;
 use ndarray::{Array1, Array2};
 
 pub type Tags = HashSet<String>;
+pub type ScoresMatrix = Array2<u8>;
+pub type ScoresArray = Array1<u8>;
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum Pic {
@@ -24,12 +27,12 @@ impl Pic {
         }
     }
 
-    pub fn score_with(&self, other: &Rc<Pic>) -> usize {
+    pub fn score_with(&self, other: &Rc<Pic>) -> u8 {
         let a = self.tags();
         let b = other.tags();
-        let a_not_b = a.difference(&b).count();
-        let a_and_b = a.intersection(&b).count();
-        let b_not_a = b.difference(&a).count();
+        let a_not_b = a.difference(&b).count() as u8;
+        let a_and_b = a.intersection(&b).count() as u8;
+        let b_not_a = b.difference(&a).count() as u8;
         min(a_not_b, min(a_and_b, b_not_a))
     }
 
@@ -46,13 +49,11 @@ impl Pic {
         }
     }
 
-    pub fn all_scores(&self, pics: &Pics) -> Array1<usize> {
-        // let mut scores = Vec::with_capacity(pics.len());
-        let mut scores = Array1::<usize>::zeros(pics.len());
-        for (idx, pic) in pics.enumerate() {
+    pub fn all_scores(&self, pics: &Pics) -> ScoresArray {
+        let mut scores = ScoresArray::zeros(pics.len());
+        for (idx, pic) in pics.iter().enumerate() {
             let score = self.score_with(&pic);
-            scores[idx]
-            // scores.push(score)
+            scores[idx] = score;
         }
         scores
     }
@@ -67,26 +68,28 @@ impl Pic {
 }
 
 pub trait Score {
-    fn score(&self) -> usize;
-    fn scores_matrix(&self) -> Array2<usize>;
+    fn score(&self) -> u8;
+    fn scores_matrix(&self) -> ScoresMatrix;
 }
 
 impl Score for Pics {
-    fn score(&self) -> usize {
+    fn score(&self) -> u8 {
         let pairs = self.windows(2);
-        let mut sum: usize = 0;
+        let mut sum: u8 = 0;
         for pair in pairs {
             sum += pair[0].score_with(&pair[1]);
         }
         sum
     }
-    fn scores_matrix(&self) -> Array2<usize> {
+    fn scores_matrix(&self) -> ScoresMatrix {
         let len = self.len();
-        let mut scores = Array2::<usize>::zeros((len, len));
+        let mut scores = ScoresMatrix::zeros((len, len));
         let pics = self.clone();
-        for (idx, row) in scores.genrows_mut().enumerate() {
-            let pic_scores = self[idx].all_scores(&pics);
-            row::from_vec(pic_scores);
+        for (idx, pic) in self.iter().enumerate() {
+            let pic_scores = pic.all_scores(&pics);
+            for (jdx, &score) in pic_scores.iter().enumerate() {
+                scores[(idx, jdx)] = score;
+            }
         }
         scores
     }

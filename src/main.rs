@@ -21,14 +21,7 @@ fn main() {
     // println!("score 3 with 0{:?}", pics[3].score_with(&pics[0]));
     // println!("score all {:?}", pics.score());
     println!("score for 0 {:?}", pics[0].all_scores(&pics));
-    let mut scores: Vec<Vec<usize>> = Vec::with_capacity(pics.len());
-    let pics_2 = pics.clone();
-    for pic in &pics {
-        let pic_scores = pic.all_scores(&pics_2);
-        scores.push(pic_scores);
-    }
-    println!("scores: {:?}", scores);
     let scores_matrix = pics.scores_matrix();
     println!("{:?}", scores_matrix);
-    println!("{:?}", scores_matrix.get((0, 0)));
+    println!("{:?}", scores_matrix[(0, 0)]);
 }
