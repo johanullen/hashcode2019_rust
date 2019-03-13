@@ -1,7 +1,6 @@
 use crate::types::{Pic, PicType, Pics, Tags};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::rc::Rc;
 
 pub fn read(filename: &str) -> Pics {
     let file = File::open(filename).expect(&format!("file {:?} not found", filename));
@@ -24,7 +23,7 @@ pub fn read(filename: &str) -> Pics {
         for tag in part_iter {
             tags.insert(tag.to_string());
         }
-        let tags = Rc::new(tags);
+        // let tags = Rc::new(tags);
         let id = match pic_type {
             "H" => PicType::H { idx },
             "V" => PicType::V { idx },

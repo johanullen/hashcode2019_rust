@@ -1,9 +1,8 @@
 use std::cmp::min;
 use std::collections::HashSet;
-use std::rc::Rc;
 extern crate ndarray;
 use ndarray::{Array1, Array2};
-use std::thread;
+// use std::thread;
 
 pub type Tags = HashSet<String>;
 pub type ScoresMatrix = Array2<u8>;
@@ -11,7 +10,7 @@ pub type ScoresArray = Array1<u8>;
 
 #[derive(Debug, Clone)]
 pub struct Pic {
-    pub tags: Rc<Tags>,
+    pub tags: Tags,
     pub id: PicType,
 }
 
@@ -38,8 +37,8 @@ impl Pic {
             (PicType::V { idx: si }, PicType::V { idx: oi }) => {
                 let idx = (si.0, oi.0);
                 let id = PicType::VV { idx };
-                let union: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
-                let tags = Rc::new(union);
+                let tags: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
+                // let tags = Rc::new(union);
                 let pic = Pic { id, tags };
                 pic
             }
