@@ -1,35 +1,39 @@
-#[macro_use]
 use std::cmp::min;
 use std::collections::HashSet;
 use std::rc::Rc;
 extern crate ndarray;
-use ndarray::prelude::*;
 use ndarray::{Array1, Array2};
 
 pub type Tags = HashSet<String>;
 pub type ScoresMatrix = Array2<u8>;
 pub type ScoresArray = Array1<u8>;
-#[allow(dead_code)]
+
 #[derive(Debug, Clone)]
-pub enum Pic {
-    H { idx: (usize,), tags: Rc<Tags> },
-    V { idx: (usize,), tags: Rc<Tags> },
-    VV { idx: (usize, usize), tags: Rc<Tags> },
+pub struct Pic {
+    pub tags: Rc<Tags>,
+    pub id: PicType,
+}
+
+#[derive(Debug, Clone)]
+pub enum PicType {
+    H { idx: (usize,) },
+    V { idx: (usize,) },
+    VV { idx: (usize, usize) },
 }
 pub type Pics = Vec<Rc<Pic>>;
 
 impl Pic {
-    pub fn tags(&self) -> &Rc<Tags> {
-        match self {
-            Pic::H { idx, tags } => &tags,
-            Pic::V { idx, tags } => &tags,
-            Pic::VV { idx, tags } => &tags,
-        }
-    }
+    // pub fn tags(&self) -> &Rc<Tags> {
+    //     match self {
+    //         Pic::H { idx, tags } => &tags,
+    //         Pic::V { idx, tags } => &tags,
+    //         Pic::VV { idx, tags } => &tags,
+    //     }
+    // }
 
     pub fn score_with(&self, other: &Rc<Pic>) -> u8 {
-        let a = self.tags();
-        let b = other.tags();
+        let a = &self.tags;
+        let b = &other.tags;
         let a_not_b = a.difference(&b).count() as u8;
         let a_and_b = a.intersection(&b).count() as u8;
         let b_not_a = b.difference(&a).count() as u8;
@@ -37,12 +41,13 @@ impl Pic {
     }
 
     pub fn combine_with(&self, other: &Rc<Pic>) -> Rc<Pic> {
-        match (self, &**other) {
-            (Pic::V { idx: si, tags: st }, Pic::V { idx: oi, tags: ot }) => {
+        match (&self.id, &other.id) {
+            (PicType::V { idx: si }, PicType::V { idx: oi }) => {
                 let idx = (si.0, oi.0);
-                let union: Tags = st.union(&ot).map(|x| x.clone()).collect();
+                let id = PicType::VV { idx };
+                let union: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
                 let tags = Rc::new(union);
-                let pic = Pic::VV { idx, tags };
+                let pic = Pic { id, tags };
                 Rc::new(pic)
             }
             (_, _) => panic!("not V"),
@@ -59,10 +64,10 @@ impl Pic {
     }
 
     fn idx(self) -> usize {
-        match self {
-            Pic::H { idx, tags } => idx.0,
-            Pic::V { idx, tags } => idx.0,
-            Pic::VV { idx, tags } => idx.0,
+        match self.id {
+            PicType::H { idx } => idx.0,
+            PicType::V { idx } => idx.0,
+            PicType::VV { idx } => idx.0,
         }
     }
 }
