@@ -1,8 +1,8 @@
 use std::cmp::min;
 use std::collections::HashSet;
 extern crate ndarray;
-use ndarray::{Array1, Array2};
-// use std::thread;
+use ndarray::{Array1, Array2, s};
+use std::thread;
 
 pub type Tags = HashSet<String>;
 pub type ScoresMatrix = Array2<u8>;
@@ -14,13 +14,18 @@ pub struct Pic {
     pub id: PicType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum PicType {
     H { idx: (usize,) },
     V { idx: (usize,) },
     VV { idx: (usize, usize) },
 }
 pub type Pics = Vec<Pic>;
+
+unsafe impl Send for PicType {}
+unsafe impl Sync for PicType {}
+unsafe impl Send for Pic {}
+unsafe impl Sync for Pic {}
 
 impl Pic {
     pub fn score_with(&self, other: &Pic) -> u8 {
@@ -79,17 +84,34 @@ impl Score for Pics {
         sum
     }
     fn scores_matrix(&self) -> ScoresMatrix {
+        let threads = 6;
         let len = self.len();
+        let slice = len / threads + 1;
+        let max_slice = min(threads-1, len)+1;
+        let mut handles = vec![];
         let mut scores = ScoresMatrix::zeros((len, len));
-        for (idx, pic) in self.iter().enumerate() {
-            // let handle = thread::spawn(|| {
-            let pic_scores = pic.all_scores(&self.clone());
-            for (jdx, &score) in pic_scores.iter().enumerate() {
-                scores[(idx, jdx)] = score;
-            }
-            // });
-
-
+        for tc in 0..max_slice {
+            let start = tc*slice;
+            let end = min(len, (tc+1)*slice);
+            println!("{:?}-{:?}", start, end);
+            let mut scores_slice = scores.slice_mut(s![start..end, ..]);
+            let builder = thread::Builder::new().name(format!("slice {:?} to {:?} ", start, end));
+            let pics = self.clone();
+            let pics_slice = self[start..end].to_vec();
+            let handle = unsafe { builder.spawn_unchecked(move || {
+                for (idx, pic) in pics_slice.iter().enumerate() {
+                // for (idx, pic) in self.iter().enumerate() {
+                    let pic_scores = pic.all_scores(&pics);
+                    // let idx = tc*slice + idx;
+                    for (jdx, &score) in pic_scores.iter().enumerate() {
+                        scores_slice[(idx, jdx)] = score;
+                    }
+                }
+            }).unwrap()};
+            handles.push(handle);
+        }
+        for handle in handles {
+            handle.join().unwrap();
         }
         scores
     }
