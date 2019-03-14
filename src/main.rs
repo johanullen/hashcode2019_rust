@@ -4,27 +4,57 @@
 #![feature(thread_spawn_unchecked)]
 mod io;
 mod types;
+mod analyse;
+use std::time::Instant;
 use io::read;
 use types::Score;
+use analyse::iterative_greedy;
 
 fn main() {
-    // let pics = read("data/a_example.txt");
-    let pics = read("data/b_lovely_landscapes.txt");
-    // let pics = read("data/c_memorable_moments.txt");
-    // for pic in &pics {
-    //     println!("{:?}", pic);
-    // }
+    let start = Instant::now();
+    // let filename = "data/a_example.txt";
+    // let filename = "data/b_lovely_landscapes.txt";
+    // let filename = "data/c_memorable_moments.txt";
+    let filenames = vec![
+        "data/a_example.txt",
+        // "data/b_lovely_landscapes.txt",
+        "data/c_memorable_moments.txt",
+    ];
+    println!("*******************************************");
+    for filename in filenames {
+        let ds_timer = Instant::now();
+        let interm = Instant::now();
+        let pics = read(filename);
+        let end = interm.elapsed();
+        println!("read {:?}", filename);
+        // println!("{:?}", pics);
+        println!("\tscore all {:?}", pics.score());
+        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!("\t-----------------------------------");
 
-    // println!("combine 1&2 {:?}", pics[1].combine_with(&pics[2]));
-    // println!(
-    //     "score 1&2 with 3: {:?}",
-    //     pics[1].combine_with(&pics[2]).score_with(&pics[3])
-    // );
-    // println!("score 3 with 0{:?}", pics[3].score_with(&pics[0]));
-    // println!("score all {:?}", pics.score());
-    // println!("score for 0 {:?}", pics[0].all_scores(&pics));
-    let scores_matrix = pics.scores_matrix();
-    // println!("{:?}", scores_matrix);
-    println!("{:?}", scores_matrix.shape());
-    // println!("{:?}", scores_matrix[(0, 0)]);
+        let interm = Instant::now();
+        let pics = iterative_greedy(&pics);
+        let end = interm.elapsed();
+        println!("\titerative_greedy");
+        // println!("{:?}", pics);
+        println!("\tscore all {:?}", pics.score());
+        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!("\t-----------------------------------");
+
+        let interm = Instant::now();
+        let pics = iterative_greedy(&pics);
+        let end = interm.elapsed();
+        println!("\titerative_greedy #2");
+        // println!("{:?}", pics);
+        println!("\tscore all {:?}", pics.score());
+        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!("\t-----------------------------------");
+
+        let end = ds_timer.elapsed();
+        println!("time: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!("*******************************************");
+    }
+
+    let end = start.elapsed();
+    println!("time: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
 }

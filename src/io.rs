@@ -1,4 +1,4 @@
-use crate::types::{Pic, PicType, Pics, Tags};
+use crate::types::{Pic, PicSourceId, Pics, Tags};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
@@ -14,7 +14,6 @@ pub fn read(filename: &str) -> Pics {
     let mut pics = Pics::with_capacity(no_lines);
     for (ix, line) in reader.lines().enumerate() {
         let line = line.unwrap();
-        let idx = (ix,);
         let mut part_iter = line.split(" ");
         let pic_type = part_iter.next().unwrap();
         let no_tags = part_iter.next().unwrap();
@@ -23,13 +22,13 @@ pub fn read(filename: &str) -> Pics {
         for tag in part_iter {
             tags.insert(tag.to_string());
         }
-        // let tags = Rc::new(tags);
-        let id = match pic_type {
-            "H" => PicType::H { idx },
-            "V" => PicType::V { idx },
+        let source = match pic_type {
+            "H" => PicSourceId::H(ix),
+            "V" => PicSourceId::V(ix),
+            "VV" => PicSourceId::VV((ix, ix)),
             x => panic!("{:?}", x),
         };
-        let pic = Pic { tags, id };
+        let pic = Pic { tags, id:ix, source };
         pics.push(pic);
     }
     pics

@@ -11,19 +11,20 @@ pub type ScoresArray = Array1<u8>;
 #[derive(Debug, Clone)]
 pub struct Pic {
     pub tags: Tags,
-    pub id: PicType,
+    pub id: usize,
+    pub source: PicSourceId,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum PicType {
-    H { idx: (usize,) },
-    V { idx: (usize,) },
-    VV { idx: (usize, usize) },
+pub enum PicSourceId {
+    H(usize),
+    V(usize),
+    VV((usize, usize)),
 }
 pub type Pics = Vec<Pic>;
 
-unsafe impl Send for PicType {}
-unsafe impl Sync for PicType {}
+unsafe impl Send for PicSourceId {}
+unsafe impl Sync for PicSourceId {}
 unsafe impl Send for Pic {}
 unsafe impl Sync for Pic {}
 
@@ -37,17 +38,16 @@ impl Pic {
         min(a_not_b, min(a_and_b, b_not_a))
     }
 
-    pub fn combine_with(&self, other: &Pic) -> Pic {
-        match (&self.id, &other.id) {
-            (PicType::V { idx: si }, PicType::V { idx: oi }) => {
-                let idx = (si.0, oi.0);
-                let id = PicType::VV { idx };
+    pub fn combine_with(&self, other: &Pic, new_id: usize) -> Pic {
+        match (&self.source, &other.source) {
+            (PicSourceId::V(_), PicSourceId::V(_)) => {
+                let source = (self.id, self.id);
+                let source = PicSourceId::VV (source);
                 let tags: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
-                // let tags = Rc::new(union);
-                let pic = Pic { id, tags };
+                let pic = Pic { id:new_id, tags, source };
                 pic
             }
-            (_, _) => panic!("not V"),
+            (a, b) => panic!(format!("only `PicSourceId::V` Pics can be combined, not `{:?}` and `{:?}`", a, b)),
         }
     }
 
@@ -60,11 +60,27 @@ impl Pic {
         scores
     }
 
-    fn idx(self) -> usize {
-        match self.id {
-            PicType::H { idx } => idx.0,
-            PicType::V { idx } => idx.0,
-            PicType::VV { idx } => idx.0,
+    pub fn intersect_with(&self, other: &Pic) -> Tags {
+        let mut new_tags = Tags::new();
+        for tag in self.tags.intersection(&other.tags) {
+            new_tags.insert(tag.clone());
+        }
+        new_tags
+    }
+
+    pub fn union_with(&self, other: &Pic) -> Tags {
+        let mut new_tags = Tags::new();
+        for tag in self.tags.union(&other.tags) {
+            new_tags.insert(tag.clone());
+        }
+        new_tags
+    }
+
+    pub fn source(&self) -> usize {
+        match self.source {
+            PicSourceId::H(id) => panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::H"),
+            PicSourceId::V(id) => id,
+            PicSourceId::VV(id) => panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::VV"),
         }
     }
 }
@@ -93,16 +109,13 @@ impl Score for Pics {
         for tc in 0..max_slice {
             let start = tc*slice;
             let end = min(len, (tc+1)*slice);
-            println!("{:?}-{:?}", start, end);
             let mut scores_slice = scores.slice_mut(s![start..end, ..]);
             let builder = thread::Builder::new().name(format!("slice {:?} to {:?} ", start, end));
             let pics = self.clone();
             let pics_slice = self[start..end].to_vec();
             let handle = unsafe { builder.spawn_unchecked(move || {
                 for (idx, pic) in pics_slice.iter().enumerate() {
-                // for (idx, pic) in self.iter().enumerate() {
                     let pic_scores = pic.all_scores(&pics);
-                    // let idx = tc*slice + idx;
                     for (jdx, &score) in pic_scores.iter().enumerate() {
                         scores_slice[(idx, jdx)] = score;
                     }
@@ -114,5 +127,17 @@ impl Score for Pics {
             handle.join().unwrap();
         }
         scores
+    }
+}
+
+pub trait PicsFn {
+    fn reindex(&mut self);
+}
+
+impl PicsFn for Pics {
+    fn reindex(&mut self) {
+        for (idx, pic) in self.iter_mut().enumerate() {
+            pic.id = idx;
+        }
     }
 }
