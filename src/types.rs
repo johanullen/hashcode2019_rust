@@ -2,6 +2,7 @@ use std::cmp::min;
 use std::collections::HashSet;
 extern crate ndarray;
 use ndarray::{s, Array1, Array2};
+use std::hash::{Hash, Hasher};
 use std::thread;
 
 pub type Tags = HashSet<String>;
@@ -27,6 +28,30 @@ unsafe impl Send for PicType {}
 unsafe impl Sync for PicType {}
 unsafe impl Send for Pic {}
 unsafe impl Sync for Pic {}
+
+impl Eq for Pic {}
+impl PartialEq for Pic {
+    fn eq(&self, other: &Pic) -> bool {
+        match (self.source, other.source) {
+            (PicType::H(sid), PicType::H(oid)) => sid == oid,
+            (PicType::V(sid), PicType::V(oid)) => sid == oid,
+            (PicType::VV(sid1, sid2), PicType::VV(oid1, oid2)) => sid1 == oid1 && sid2 == oid2,
+            (_, _) => false,
+        }
+    }
+}
+impl Hash for Pic {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self.source {
+            PicType::H(id) => id.hash(state),
+            PicType::V(id) => id.hash(state),
+            PicType::VV(id1, id2) => {
+                id1.hash(state);
+                id2.hash(state)
+            }
+        }
+    }
+}
 
 impl Pic {
     pub fn score_with(&self, other: &Pic) -> u8 {
