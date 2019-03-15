@@ -147,6 +147,7 @@ impl Score for Pics {
 
 pub trait PicsFn {
     fn reindex(&mut self);
+    fn filter(&self) -> Pics;
 }
 
 impl PicsFn for Pics {
@@ -154,5 +155,16 @@ impl PicsFn for Pics {
         for (idx, pic) in self.iter_mut().enumerate() {
             pic.id = idx;
         }
+    }
+
+    fn filter(&self) -> Pics {
+        self.iter()
+            .filter(|x| match x.source {
+                PicSourceId::H(_) => false,
+                PicSourceId::V(_) => true,
+                PicSourceId::VV(_) => false,
+            })
+            .cloned()
+            .collect()
     }
 }
