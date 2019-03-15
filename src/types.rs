@@ -19,7 +19,7 @@ pub struct Pic {
 pub enum PicSourceId {
     H(usize),
     V(usize),
-    VV((usize, usize)),
+    VV(usize, usize),
 }
 pub type Pics = Vec<Pic>;
 
@@ -41,8 +41,7 @@ impl Pic {
     pub fn combine_with(&self, other: &Pic, new_id: usize) -> Pic {
         match (&self.source, &other.source) {
             (PicSourceId::V(_), PicSourceId::V(_)) => {
-                let source = (self.id, self.id);
-                let source = PicSourceId::VV(source);
+                let source = PicSourceId::VV(self.id, self.id);
                 let tags: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
                 let pic = Pic {
                     id: new_id,
@@ -85,11 +84,11 @@ impl Pic {
 
     pub fn source(&self) -> usize {
         match self.source {
-            PicSourceId::H(id) => {
+            PicSourceId::H(_) => {
                 panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::H")
             }
             PicSourceId::V(id) => id,
-            PicSourceId::VV(id) => {
+            PicSourceId::VV(_, _) => {
                 panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::VV")
             }
         }
@@ -162,7 +161,7 @@ impl PicsFn for Pics {
             .filter(|x| match x.source {
                 PicSourceId::H(_) => false,
                 PicSourceId::V(_) => true,
-                PicSourceId::VV(_) => false,
+                PicSourceId::VV(_, _) => false,
             })
             .cloned()
             .collect()

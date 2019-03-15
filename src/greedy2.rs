@@ -97,7 +97,7 @@ impl GreedyNext for Pic {
                     pic: Pic {
                         tags: pic.union_with(contender),
                         id: axis_len,
-                        source: PicSourceId::VV((pic.source(), contender.source())),
+                        source: PicSourceId::VV(pic.source(), contender.source()),
                     },
                     score: tags.len() as u8,
                     score_sum: 0,
@@ -135,7 +135,7 @@ impl GreedyNext for Pic {
         match self.source {
             PicSourceId::H(_) => complete_slide(self, pics, scores_matrix),
             PicSourceId::V(_) => incomplete_slide(self, pics, scores_matrix),
-            PicSourceId::VV(_) => complete_slide(self, pics, scores_matrix),
+            PicSourceId::VV(_, _) => complete_slide(self, pics, scores_matrix),
         }
     }
 }

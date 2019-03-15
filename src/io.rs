@@ -25,7 +25,7 @@ pub fn read(filename: &str) -> Pics {
         let source = match pic_type {
             "H" => PicSourceId::H(ix),
             "V" => PicSourceId::V(ix),
-            "VV" => PicSourceId::VV((ix, ix)),
+            "VV" => PicSourceId::VV(ix, ix),
             x => panic!("{:?}", x),
         };
         let pic = Pic {
