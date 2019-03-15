@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::collections::HashSet;
 extern crate ndarray;
-use ndarray::{Array1, Array2, s};
+use ndarray::{s, Array1, Array2};
 use std::thread;
 
 pub type Tags = HashSet<String>;
@@ -42,12 +42,19 @@ impl Pic {
         match (&self.source, &other.source) {
             (PicSourceId::V(_), PicSourceId::V(_)) => {
                 let source = (self.id, self.id);
-                let source = PicSourceId::VV (source);
+                let source = PicSourceId::VV(source);
                 let tags: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
-                let pic = Pic { id:new_id, tags, source };
+                let pic = Pic {
+                    id: new_id,
+                    tags,
+                    source,
+                };
                 pic
             }
-            (a, b) => panic!(format!("only `PicSourceId::V` Pics can be combined, not `{:?}` and `{:?}`", a, b)),
+            (a, b) => panic!(format!(
+                "only `PicSourceId::V` Pics can be combined, not `{:?}` and `{:?}`",
+                a, b
+            )),
         }
     }
 
@@ -78,9 +85,13 @@ impl Pic {
 
     pub fn source(&self) -> usize {
         match self.source {
-            PicSourceId::H(id) => panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::H"),
+            PicSourceId::H(id) => {
+                panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::H")
+            }
             PicSourceId::V(id) => id,
-            PicSourceId::VV(id) => panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::VV"),
+            PicSourceId::VV(id) => {
+                panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::VV")
+            }
         }
     }
 }
@@ -103,24 +114,28 @@ impl Score for Pics {
         let threads = 6;
         let len = self.len();
         let slice = len / threads + 1;
-        let max_slice = min(threads-1, len)+1;
+        let max_slice = min(threads - 1, len) + 1;
         let mut handles = vec![];
         let mut scores = ScoresMatrix::zeros((len, len));
         for tc in 0..max_slice {
-            let start = tc*slice;
-            let end = min(len, (tc+1)*slice);
+            let start = tc * slice;
+            let end = min(len, (tc + 1) * slice);
             let mut scores_slice = scores.slice_mut(s![start..end, ..]);
             let builder = thread::Builder::new().name(format!("slice {:?} to {:?} ", start, end));
             let pics = self.clone();
             let pics_slice = self[start..end].to_vec();
-            let handle = unsafe { builder.spawn_unchecked(move || {
-                for (idx, pic) in pics_slice.iter().enumerate() {
-                    let pic_scores = pic.all_scores(&pics);
-                    for (jdx, &score) in pic_scores.iter().enumerate() {
-                        scores_slice[(idx, jdx)] = score;
-                    }
-                }
-            }).unwrap()};
+            let handle = unsafe {
+                builder
+                    .spawn_unchecked(move || {
+                        for (idx, pic) in pics_slice.iter().enumerate() {
+                            let pic_scores = pic.all_scores(&pics);
+                            for (jdx, &score) in pic_scores.iter().enumerate() {
+                                scores_slice[(idx, jdx)] = score;
+                            }
+                        }
+                    })
+                    .unwrap()
+            };
             handles.push(handle);
         }
         for handle in handles {
