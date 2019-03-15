@@ -1,6 +1,6 @@
 use crate::types::PicsFn;
 use crate::types::Score;
-use crate::types::{Pic, PicSourceId, Pics, ScoresMatrix};
+use crate::types::{Pic, PicType, Pics, ScoresMatrix};
 use ndarray::{Array1, Axis};
 
 type ScoreSum = Array1<u32>;
@@ -97,7 +97,7 @@ impl GreedyNext for Pic {
                     pic: Pic {
                         tags: pic.union_with(contender),
                         id: axis_len,
-                        source: PicSourceId::VV(pic.source(), contender.source()),
+                        source: PicType::VV(pic.source(), contender.source()),
                     },
                     score: tags.len() as u8,
                     score_sum: 0,
@@ -107,7 +107,7 @@ impl GreedyNext for Pic {
             let mut vpics: Vec<(usize, &Pic)> = vec![];
             for (idx, contender) in pics.iter().enumerate() {
                 match contender.source {
-                    PicSourceId::V(_) => vpics.push((idx, contender)),
+                    PicType::V(_) => vpics.push((idx, contender)),
                     _ => (),
                 }
             }
@@ -133,9 +133,9 @@ impl GreedyNext for Pic {
             }
         }
         match self.source {
-            PicSourceId::H(_) => complete_slide(self, pics, scores_matrix),
-            PicSourceId::V(_) => incomplete_slide(self, pics, scores_matrix),
-            PicSourceId::VV(_, _) => complete_slide(self, pics, scores_matrix),
+            PicType::H(_) => complete_slide(self, pics, scores_matrix),
+            PicType::V(_) => incomplete_slide(self, pics, scores_matrix),
+            PicType::VV(_, _) => complete_slide(self, pics, scores_matrix),
         }
     }
 }

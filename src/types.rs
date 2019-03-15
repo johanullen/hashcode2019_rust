@@ -12,19 +12,19 @@ pub type ScoresArray = Array1<u8>;
 pub struct Pic {
     pub tags: Tags,
     pub id: usize,
-    pub source: PicSourceId,
+    pub source: PicType,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum PicSourceId {
+pub enum PicType {
     H(usize),
     V(usize),
     VV(usize, usize),
 }
 pub type Pics = Vec<Pic>;
 
-unsafe impl Send for PicSourceId {}
-unsafe impl Sync for PicSourceId {}
+unsafe impl Send for PicType {}
+unsafe impl Sync for PicType {}
 unsafe impl Send for Pic {}
 unsafe impl Sync for Pic {}
 
@@ -40,8 +40,8 @@ impl Pic {
 
     pub fn combine_with(&self, other: &Pic, new_id: usize) -> Pic {
         match (&self.source, &other.source) {
-            (PicSourceId::V(_), PicSourceId::V(_)) => {
-                let source = PicSourceId::VV(self.id, self.id);
+            (PicType::V(_), PicType::V(_)) => {
+                let source = PicType::VV(self.id, self.id);
                 let tags: Tags = self.tags.union(&other.tags).map(|x| x.clone()).collect();
                 let pic = Pic {
                     id: new_id,
@@ -51,7 +51,7 @@ impl Pic {
                 pic
             }
             (a, b) => panic!(format!(
-                "only `PicSourceId::V` Pics can be combined, not `{:?}` and `{:?}`",
+                "only `PicType::V` Pics can be combined, not `{:?}` and `{:?}`",
                 a, b
             )),
         }
@@ -84,12 +84,10 @@ impl Pic {
 
     pub fn source(&self) -> usize {
         match self.source {
-            PicSourceId::H(_) => {
-                panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::H")
-            }
-            PicSourceId::V(id) => id,
-            PicSourceId::VV(_, _) => {
-                panic!("use Pic.source() only for merging PicSourceId::V, not PicSourceId::VV")
+            PicType::H(_) => panic!("use Pic.source() only for merging PicType::V, not PicType::H"),
+            PicType::V(id) => id,
+            PicType::VV(_, _) => {
+                panic!("use Pic.source() only for merging PicType::V, not PicType::VV")
             }
         }
     }
@@ -159,9 +157,9 @@ impl PicsFn for Pics {
     fn filter(&self) -> Pics {
         self.iter()
             .filter(|x| match x.source {
-                PicSourceId::H(_) => false,
-                PicSourceId::V(_) => true,
-                PicSourceId::VV(_, _) => false,
+                PicType::H(_) => false,
+                PicType::V(_) => true,
+                PicType::VV(_, _) => false,
             })
             .cloned()
             .collect()
