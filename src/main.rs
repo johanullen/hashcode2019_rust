@@ -17,7 +17,7 @@ fn main() {
     // let filename = "data/c_memorable_moments.txt";
     let filenames = vec![
         "data/a_example.txt",
-        // "data/b_lovely_landscapes.txt",
+        "data/b_lovely_landscapes.txt",
         "data/c_memorable_moments.txt",
     ];
     println!("*******************************************");
