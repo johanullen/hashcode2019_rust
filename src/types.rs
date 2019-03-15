@@ -99,6 +99,19 @@ impl Pic {
         new_tags
     }
 
+    pub fn min_intersection(&self, pics: &Pics) -> Pic {
+        let mut min_pic = pics[0].clone();
+        let mut min = self.intersect_with(&min_pic).len();
+        for pic in pics {
+            let current = self.intersect_with(pic).len();
+            if current < min {
+                min = current;
+                min_pic = pic.clone();
+            }
+        }
+        min_pic
+    }
+
     pub fn union_with(&self, other: &Pic) -> Tags {
         let mut new_tags = Tags::new();
         for tag in self.tags.union(&other.tags) {
