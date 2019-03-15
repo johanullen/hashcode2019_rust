@@ -28,7 +28,11 @@ pub fn read(filename: &str) -> Pics {
             "VV" => PicSourceId::VV((ix, ix)),
             x => panic!("{:?}", x),
         };
-        let pic = Pic { tags, id:ix, source };
+        let pic = Pic {
+            tags,
+            id: ix,
+            source,
+        };
         pics.push(pic);
     }
     pics

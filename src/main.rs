@@ -2,13 +2,13 @@
 #![allow(unused_variables)]
 #![feature(optin_builtin_traits)]
 #![feature(thread_spawn_unchecked)]
+mod greedy2;
 mod io;
 mod types;
-mod analyse;
-use std::time::Instant;
+use greedy2::iterative_greedy;
 use io::read;
+use std::time::Instant;
 use types::Score;
-use analyse::iterative_greedy;
 
 fn main() {
     let start = Instant::now();
@@ -29,7 +29,10 @@ fn main() {
         println!("read {:?}", filename);
         // println!("{:?}", pics);
         println!("\tscore all {:?}", pics.score());
-        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!(
+            "\ttime: {:.4}s",
+            end.as_secs() as f64 + end.subsec_nanos() as f64 * 1e-9
+        );
         println!("\t-----------------------------------");
 
         let interm = Instant::now();
@@ -38,7 +41,10 @@ fn main() {
         println!("\titerative_greedy");
         // println!("{:?}", pics);
         println!("\tscore all {:?}", pics.score());
-        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!(
+            "\ttime: {:.4}s",
+            end.as_secs() as f64 + end.subsec_nanos() as f64 * 1e-9
+        );
         println!("\t-----------------------------------");
 
         let interm = Instant::now();
@@ -47,14 +53,23 @@ fn main() {
         println!("\titerative_greedy #2");
         // println!("{:?}", pics);
         println!("\tscore all {:?}", pics.score());
-        println!("\ttime: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!(
+            "\ttime: {:.4}s",
+            end.as_secs() as f64 + end.subsec_nanos() as f64 * 1e-9
+        );
         println!("\t-----------------------------------");
 
         let end = ds_timer.elapsed();
-        println!("time: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+        println!(
+            "time: {:.4}s",
+            end.as_secs() as f64 + end.subsec_nanos() as f64 * 1e-9
+        );
         println!("*******************************************");
     }
 
     let end = start.elapsed();
-    println!("time: {:.4}s", end.as_secs() as f64 + end.subsec_nanos() as f64 *1e-9);
+    println!(
+        "time: {:.4}s",
+        end.as_secs() as f64 + end.subsec_nanos() as f64 * 1e-9
+    );
 }

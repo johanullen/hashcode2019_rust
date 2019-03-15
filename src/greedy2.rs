@@ -1,18 +1,18 @@
-use ndarray::{Axis, Array1};
-use crate::types::{Pics, Pic, PicSourceId, ScoresMatrix};
-use crate::types::Score;
 use crate::types::PicsFn;
+use crate::types::Score;
+use crate::types::{Pic, PicSourceId, Pics, ScoresMatrix};
+use ndarray::{Array1, Axis};
 
 type ScoreSum = Array1<u32>;
 
-enum NextOption{
+enum NextOption {
     Idx(usize),
-    Pic{pic: Pic, other_idx: usize},
+    Pic { pic: Pic, other_idx: usize },
     None,
 }
 
 trait GreedyNext {
-    fn next(&self, pics:&Pics, scores_matrix: &ScoresMatrix) -> NextOption;
+    fn next(&self, pics: &Pics, scores_matrix: &ScoresMatrix) -> NextOption;
     fn score_sum(&self, axis_len: usize, scores_matrix: &ScoresMatrix, pics: &Pics) -> u32;
 }
 
@@ -29,7 +29,7 @@ impl GreedyNext for Pic {
         }
         score_sum
     }
-    fn next(&self, pics:&Pics, scores_matrix: &ScoresMatrix) -> NextOption {
+    fn next(&self, pics: &Pics, scores_matrix: &ScoresMatrix) -> NextOption {
         #[derive(Debug, Clone)]
         struct Best {
             idx: usize,
@@ -37,7 +37,12 @@ impl GreedyNext for Pic {
             score: u8,
             score_sum: u32,
         }
-        fn best_contender(contenders: Vec<Best>, axis_len: usize, scores_matrix: &ScoresMatrix, pics: &Pics) -> Best {
+        fn best_contender(
+            contenders: Vec<Best>,
+            axis_len: usize,
+            scores_matrix: &ScoresMatrix,
+            pics: &Pics,
+        ) -> Best {
             let mut best = contenders[0].clone();
             for contender in contenders {
                 let contender_score_sum = contender.pic.score_sum(axis_len, scores_matrix, pics);
@@ -48,7 +53,7 @@ impl GreedyNext for Pic {
             }
             best
         }
-        fn complete_slide(pic:&Pic, pics:&Pics, scores_matrix: &ScoresMatrix) -> NextOption {
+        fn complete_slide(pic: &Pic, pics: &Pics, scores_matrix: &ScoresMatrix) -> NextOption {
             fn score_pair(a: &Pic, b: &Pic, axis_len: usize, scores_matrix: &ScoresMatrix) -> u8 {
                 if a.id < axis_len && b.id < axis_len {
                     scores_matrix[[a.id, b.id]]
@@ -58,9 +63,9 @@ impl GreedyNext for Pic {
             }
             let axis_len = scores_matrix.len_of(Axis(0));
             if pics.is_empty() {
-                return NextOption::None
+                return NextOption::None;
             }
-            let best = Best{
+            let best = Best {
                 idx: 0,
                 pic: pics[0].clone(),
                 score: score_pair(&pic, &pics[0], axis_len, scores_matrix),
@@ -78,19 +83,18 @@ impl GreedyNext for Pic {
                 if contender_score > best.score {
                     contenders.clear();
                     contenders.push(best.clone());
-                }
-                else if contender_score == best.score {
+                } else if contender_score == best.score {
                     contenders.push(contender.clone());
                 }
             }
             NextOption::Idx(best_contender(contenders, axis_len, scores_matrix, pics).idx)
         }
-        fn incomplete_slide(pic:&Pic, pics:&Pics, scores_matrix: &ScoresMatrix) -> NextOption {
+        fn incomplete_slide(pic: &Pic, pics: &Pics, scores_matrix: &ScoresMatrix) -> NextOption {
             fn gen_contender(idx: usize, pic: &Pic, contender: &Pic, axis_len: usize) -> Best {
                 let tags = pic.intersect_with(contender);
-                Best{
+                Best {
                     idx: idx,
-                    pic: Pic{
+                    pic: Pic {
                         tags: pic.union_with(contender),
                         id: axis_len,
                         source: PicSourceId::VV((pic.source(), contender.source())),
@@ -108,7 +112,7 @@ impl GreedyNext for Pic {
                 }
             }
             if vpics.is_empty() {
-                return NextOption::None
+                return NextOption::None;
             }
 
             let best = gen_contender(vpics[0].0, &pic, vpics[0].1, axis_len);
@@ -118,13 +122,15 @@ impl GreedyNext for Pic {
                 if contender.score < best.score {
                     contenders.clear();
                     contenders.push(contender.clone());
-                }
-                else if contender.score == best.score {
+                } else if contender.score == best.score {
                     contenders.push(contender.clone());
                 }
             }
             let best = best_contender(contenders, axis_len, scores_matrix, pics);
-            NextOption::Pic{pic: best.pic, other_idx: best.idx}
+            NextOption::Pic {
+                pic: best.pic,
+                other_idx: best.idx,
+            }
         }
         match self.source {
             PicSourceId::H(_) => complete_slide(self, pics, scores_matrix),
@@ -135,7 +141,7 @@ impl GreedyNext for Pic {
 }
 
 fn gen_score_sums(axis_len: usize, scores_matrix: &ScoresMatrix, pics: &Pics) -> ScoreSum {
-    let mut score_sums_array = ScoreSum::zeros((axis_len, ));
+    let mut score_sums_array = ScoreSum::zeros((axis_len,));
     for (ix, pic) in pics.iter().enumerate() {
         score_sums_array[[ix]] = pic.score_sum(axis_len, &scores_matrix, &pics)
     }
@@ -144,7 +150,11 @@ fn gen_score_sums(axis_len: usize, scores_matrix: &ScoresMatrix, pics: &Pics) ->
 
 fn sort_pics(pics: &Pics, score_sums_array: &ScoreSum) -> Pics {
     let mut pics = pics.clone();
-    pics.sort_by(|a, b| score_sums_array[a.id].cmp(&score_sums_array[b.id]).reverse());
+    pics.sort_by(|a, b| {
+        score_sums_array[a.id]
+            .cmp(&score_sums_array[b.id])
+            .reverse()
+    });
     pics.reindex();
     pics
 }
@@ -162,25 +172,25 @@ pub fn iterative_greedy(pics: &Pics) -> Pics {
         slides.push(current.clone());
         pics.remove(current_idx);
         if pics.is_empty() {
-            break
+            break;
         }
         current_idx = match current.next(&pics, &scores_matrix) {
             NextOption::Idx(idx) => idx,
-            NextOption::Pic{pic, other_idx} => {
+            NextOption::Pic { pic, other_idx } => {
                 slides.pop();
                 let other = &pics[other_idx];
                 pics.remove(other_idx);
                 pics.push(pic);
-                pics.len()-1
+                pics.len() - 1
             }
             NextOption::None => {
                 slides.pop();
-                match slides.pop(){
+                match slides.pop() {
                     Some(pic) => {
                         pics.push(pic);
-                        pics.len()-1
-                    },
-                    None => 0
+                        pics.len() - 1
+                    }
+                    None => 0,
                 }
             }
         };
