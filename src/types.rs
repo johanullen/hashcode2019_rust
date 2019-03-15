@@ -144,7 +144,7 @@ impl Score for Pics {
 
 pub trait PicsFn {
     fn reindex(&mut self);
-    fn filter(&self) -> Pics;
+    fn filter(&self, types: Vec<&str>) -> Pics;
 }
 
 impl PicsFn for Pics {
@@ -154,12 +154,12 @@ impl PicsFn for Pics {
         }
     }
 
-    fn filter(&self) -> Pics {
+    fn filter(&self, types: Vec<&str>) -> Pics {
         self.iter()
             .filter(|x| match x.source {
-                PicType::H(_) => false,
-                PicType::V(_) => true,
-                PicType::VV(_, _) => false,
+                PicType::H(_) => types.contains(&"H"),
+                PicType::V(_) => types.contains(&"V"),
+                PicType::VV(_, _) => types.contains(&"VV"),
             })
             .cloned()
             .collect()
