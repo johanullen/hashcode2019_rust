@@ -8,6 +8,8 @@ use std::thread;
 pub type Tags = HashSet<String>;
 pub type ScoresMatrix = Array2<u8>;
 pub type ScoresArray = Array1<u8>;
+pub type Pics = Vec<Pic>;
+pub type PicSet = HashSet<Pic>;
 
 #[derive(Debug, Clone)]
 pub struct Pic {
@@ -22,7 +24,6 @@ pub enum PicType {
     V(usize),
     VV(usize, usize),
 }
-pub type Pics = Vec<Pic>;
 
 unsafe impl Send for PicType {}
 unsafe impl Sync for PicType {}
@@ -128,6 +129,19 @@ impl Pic {
                 panic!("use Pic.source() only for merging PicType::V, not PicType::VV")
             }
         }
+    }
+
+    pub fn best_match(self, pics_set: &PicSet) -> Pic {
+        let mut best_score = 0;
+        let mut best_other = self.clone();
+        for other in pics_set {
+            let other_score = self.score_with(&other);
+            if best_other == self || other_score > best_score {
+                best_score = other_score;
+                best_other = other.clone();
+            }
+        }
+        best_other
     }
 }
 
