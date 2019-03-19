@@ -2,14 +2,16 @@
 #![allow(unused_variables)]
 #![feature(optin_builtin_traits)]
 #![feature(thread_spawn_unchecked)]
+mod greedy1;
 mod greedy2;
 mod io;
-mod types;
-use crate::types::Pics;
-use greedy2::iterative_greedy;
+mod pic_type;
+mod pics_type;
+use greedy1::iter_greedy;
+
 use io::read;
+use pics_type::Pics;
 use std::time::Instant;
-use types::Score;
 
 fn run_alg(alg: &Fn(&Pics) -> Pics, pics: &Pics, name: &str, print_pics: bool) -> Pics {
     let interm = Instant::now();
@@ -54,15 +56,15 @@ fn main() {
     let filenames = vec![
         "data/a_example.txt",
         // "data/b_lovely_landscapes.txt",
-        // "data/c_memorable_moments.txt",
+        "data/c_memorable_moments.txt",
     ];
     println!("*******************************************");
     for filename in filenames {
         let interm = Instant::now();
 
         let pics = run_read(filename, print_pics);
-        let pics = run_alg(&iterative_greedy, &pics, "iterative_greedy", print_pics);
-        let pics = run_alg(&iterative_greedy, &pics, "iterative_greedy 2", print_pics);
+        // let pics = run_alg(&iterative_greedy, &pics, "greedy2::iterative_greedy", print_pics);
+        let pics = run_alg(&iter_greedy, &pics, "greedy1::iterative_greedy", print_pics);
 
         let end = interm.elapsed();
         println!(

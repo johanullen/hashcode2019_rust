@@ -34,7 +34,7 @@ impl GreedyNext for Pic {
         struct Best {
             idx: usize,
             pic: Pic,
-            score: u8,
+            score: u16,
             score_sum: u32,
         }
         fn best_contender(
@@ -54,7 +54,7 @@ impl GreedyNext for Pic {
             best
         }
         fn complete_slide(pic: &Pic, pics: &Pics, scores_matrix: &ScoresMatrix) -> NextOption {
-            fn score_pair(a: &Pic, b: &Pic, axis_len: usize, scores_matrix: &ScoresMatrix) -> u8 {
+            fn score_pair(a: &Pic, b: &Pic, axis_len: usize, scores_matrix: &ScoresMatrix) -> u16 {
                 if a.id < axis_len && b.id < axis_len {
                     scores_matrix[[a.id, b.id]]
                 } else {
@@ -99,7 +99,7 @@ impl GreedyNext for Pic {
                         id: axis_len,
                         source: PicType::VV(pic.source(), contender.source()),
                     },
-                    score: tags.len() as u8,
+                    score: tags.len() as u16,
                     score_sum: 0,
                 }
             }

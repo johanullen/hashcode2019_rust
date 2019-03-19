@@ -1,4 +1,5 @@
-use crate::types::{Pic, PicType, Pics, Tags};
+use crate::pic_type::{Pic, PicType, Tags};
+use crate::pics_type::Pics;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 

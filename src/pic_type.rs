@@ -1,15 +1,13 @@
+use crate::pics_type::PicSet;
+use crate::pics_type::Pics;
 use std::cmp::min;
 use std::collections::HashSet;
 extern crate ndarray;
-use ndarray::{s, Array1, Array2};
+use ndarray::Array1;
 use std::hash::{Hash, Hasher};
-use std::thread;
 
 pub type Tags = HashSet<String>;
-pub type ScoresMatrix = Array2<u8>;
-pub type ScoresArray = Array1<u8>;
-pub type Pics = Vec<Pic>;
-pub type PicSet = HashSet<Pic>;
+pub type ScoresArray = Array1<u16>;
 
 #[derive(Debug, Clone)]
 pub struct Pic {
@@ -55,12 +53,12 @@ impl Hash for Pic {
 }
 
 impl Pic {
-    pub fn score_with(&self, other: &Pic) -> u8 {
+    pub fn score_with(&self, other: &Pic) -> u16 {
         let a = &self.tags;
         let b = &other.tags;
-        let a_not_b = a.difference(&b).count() as u8;
-        let a_and_b = a.intersection(&b).count() as u8;
-        let b_not_a = b.difference(&a).count() as u8;
+        let a_not_b = a.difference(&b).count() as u16;
+        let a_and_b = a.intersection(&b).count() as u16;
+        let b_not_a = b.difference(&a).count() as u16;
         min(a_not_b, min(a_and_b, b_not_a))
     }
 
@@ -85,7 +83,7 @@ impl Pic {
 
     pub fn all_scores(&self, pics: &Pics) -> ScoresArray {
         let mut scores = ScoresArray::zeros(pics.len());
-        for (idx, pic) in pics.iter().enumerate() {
+        for (idx, pic) in pics.into_iter().enumerate() {
             let score = self.score_with(&pic);
             scores[idx] = score;
         }
@@ -100,11 +98,14 @@ impl Pic {
         new_tags
     }
 
-    pub fn min_intersection(&self, pics: &Pics) -> Pic {
-        let mut min_pic = pics[0].clone();
-        let mut min = self.intersect_with(&min_pic).len();
-        for pic in pics {
-            let current = self.intersect_with(pic).len();
+    pub fn min_intersection<T>(&self, pics: &T) -> Pic
+    where
+        T: IntoIterator<Item = Pic>,
+    {
+        let mut min_pic = self.clone();
+        let mut min = 9999;
+        for pic in pics.into_iter() {
+            let current = self.intersect_with(&pic).len();
             if current < min {
                 min = current;
                 min_pic = pic.clone();
@@ -142,78 +143,5 @@ impl Pic {
             }
         }
         best_other
-    }
-}
-
-pub trait Score {
-    fn score(&self) -> u8;
-    fn scores_matrix(&self) -> ScoresMatrix;
-}
-
-impl Score for Pics {
-    fn score(&self) -> u8 {
-        let pairs = self.windows(2);
-        let mut sum: u8 = 0;
-        for pair in pairs {
-            sum += pair[0].score_with(&pair[1]);
-        }
-        sum
-    }
-    fn scores_matrix(&self) -> ScoresMatrix {
-        let threads = 6;
-        let len = self.len();
-        let slice = len / threads + 1;
-        let max_slice = min(threads - 1, len) + 1;
-        let mut handles = vec![];
-        let mut scores = ScoresMatrix::zeros((len, len));
-        for tc in 0..max_slice {
-            let start = tc * slice;
-            let end = min(len, (tc + 1) * slice);
-            let mut scores_slice = scores.slice_mut(s![start..end, ..]);
-            let builder = thread::Builder::new().name(format!("slice {:?} to {:?} ", start, end));
-            let pics = self.clone();
-            let pics_slice = self[start..end].to_vec();
-            let handle = unsafe {
-                builder
-                    .spawn_unchecked(move || {
-                        for (idx, pic) in pics_slice.iter().enumerate() {
-                            let pic_scores = pic.all_scores(&pics);
-                            for (jdx, &score) in pic_scores.iter().enumerate() {
-                                scores_slice[(idx, jdx)] = score;
-                            }
-                        }
-                    })
-                    .unwrap()
-            };
-            handles.push(handle);
-        }
-        for handle in handles {
-            handle.join().unwrap();
-        }
-        scores
-    }
-}
-
-pub trait PicsFn {
-    fn reindex(&mut self);
-    fn filter(&self, types: Vec<&str>) -> Pics;
-}
-
-impl PicsFn for Pics {
-    fn reindex(&mut self) {
-        for (idx, pic) in self.iter_mut().enumerate() {
-            pic.id = idx;
-        }
-    }
-
-    fn filter(&self, types: Vec<&str>) -> Pics {
-        self.iter()
-            .filter(|x| match x.source {
-                PicType::H(_) => types.contains(&"H"),
-                PicType::V(_) => types.contains(&"V"),
-                PicType::VV(_, _) => types.contains(&"VV"),
-            })
-            .cloned()
-            .collect()
     }
 }
