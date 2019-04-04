@@ -1,22 +1,23 @@
 use crate::pic_type::{Pic, PicType};
 use std::cmp::min;
-use std::collections::HashSet;
+
+use std::thread;
 extern crate ndarray;
 use ndarray::{s, Array2};
 
-pub type PicsVec = Vec<Pic>;
-pub type PicSet = HashSet<Pic>;
-
-pub struct Pics<Iterator<Item=Pic>>;
+pub type Pics = Vec<Pic>;
 
 pub type ScoresMatrix = Array2<u16>;
 
-pub trait PicsFn<Pics> {
-    fn filter(&self, types: Vec<&str>) -> PicsVec;
+pub trait PicsFn {
+    fn filter(&self, types: Vec<&str>) -> Pics;
+    // fn reindex(&mut self);
+    fn score(&self) -> u16;
+    fn scores_matrix(&self) -> ScoresMatrix;
 }
 
-impl PicsFn for PicsVec {
-    fn filter(&self, types: Vec<&str>) -> PicsVec {
+impl PicsFn for Pics {
+    fn filter(&self, types: Vec<&str>) -> Pics {
         self.iter()
             .filter(|x| match x.source {
                 PicType::H(_) => types.contains(&"H"),
@@ -26,20 +27,11 @@ impl PicsFn for PicsVec {
             .cloned()
             .collect()
     }
-}
-
-pub trait PicsVecFn {
-    fn reindex(&mut self);
-    fn score(&self) -> u16;
-    fn scores_matrix(&self) -> ScoresMatrix;
-}
-
-impl PicsVecFn for PicsVec {
-    fn reindex(&mut self) {
-        for (idx, pic) in self.iter().enumerate() {
-            pic.id = idx;
-        }
-    }
+    // fn reindex(&mut self) {
+    //     for (idx, pic) in self.iter().enumerate() {
+    //         pic.id = idx;
+    //     }
+    // }
 
     fn score(&self) -> u16 {
         let pairs = self.windows(2);

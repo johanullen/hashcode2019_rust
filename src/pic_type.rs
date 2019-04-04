@@ -1,4 +1,3 @@
-use crate::pics_type::PicSet;
 use crate::pics_type::Pics;
 use std::cmp::min;
 use std::collections::HashSet;
@@ -82,7 +81,8 @@ impl Pic {
     }
 
     pub fn all_scores(&self, pics: &Pics) -> ScoresArray {
-        let mut scores = ScoresArray::zeros(pics.len());
+        // let mut scores = ScoresArray::zeros(pics.len());
+        let mut scores = ScoresArray::zeros(100);
         for (idx, pic) in pics.into_iter().enumerate() {
             let score = self.score_with(&pic);
             scores[idx] = score;
@@ -98,13 +98,10 @@ impl Pic {
         new_tags
     }
 
-    pub fn min_intersection<T>(&self, pics: &T) -> Pic
-    where
-        T: IntoIterator<Item = Pic>,
-    {
+    pub fn min_intersection(&self, pics: Pics) -> Pic {
         let mut min_pic = self.clone();
         let mut min = 9999;
-        for pic in pics.into_iter() {
+        for pic in pics {
             let current = self.intersect_with(&pic).len();
             if current < min {
                 min = current;
@@ -132,10 +129,10 @@ impl Pic {
         }
     }
 
-    pub fn best_match(self, pics_set: &PicSet) -> Pic {
+    pub fn best_match(self, pics: &Pics) -> Pic {
         let mut best_score = 0;
         let mut best_other = self.clone();
-        for other in pics_set {
+        for other in pics {
             let other_score = self.score_with(&other);
             if best_other == self || other_score > best_score {
                 best_score = other_score;

@@ -3,10 +3,10 @@
 #![feature(optin_builtin_traits)]
 #![feature(thread_spawn_unchecked)]
 mod greedy1;
-mod greedy2;
 mod io;
 mod pic_type;
 mod pics_type;
+use crate::pics_type::PicsFn;
 use greedy1::iter_greedy;
 
 use io::read;

@@ -1,5 +1,10 @@
-use crate::pics_type::{PicSet, Pics, PicsFn};
-use carte::pic_tyep::{Pic, PicType};
+use crate::pic_type::{Pic, PicType};
+use crate::pics_type::{Pics, PicsFn};
+use std::iter::FromIterator;
+
+use std::collections::HashSet;
+
+type PicSet = HashSet<Pic>;
 
 pub fn iter_greedy(pics: &Pics) -> Pics {
     let mut pic = pics[0].clone();
@@ -19,7 +24,7 @@ pub fn iter_greedy(pics: &Pics) -> Pics {
                 if verts.is_empty() {
                     new_pics.pop();
                 }
-                let other = pic.min_intersection(&pics_set);
+                let other = pic.min_intersection(pics_set.iter().cloned().collect());
                 verts.remove(&other);
                 pics_set.remove(&other);
                 new_pics.pop();
@@ -29,8 +34,8 @@ pub fn iter_greedy(pics: &Pics) -> Pics {
                     source: PicType::VV(pic.id, other.id),
                 }
             }
-            PicType::H(_) => pic.best_match(&pics_set),
-            PicType::VV(_, _) => pic.best_match(&pics_set),
+            PicType::H(_) => pic.best_match(&pics_set.iter().cloned().collect()),
+            PicType::VV(_, _) => pic.best_match(&pics_set.iter().cloned().collect()),
         }
     }
     new_pics
